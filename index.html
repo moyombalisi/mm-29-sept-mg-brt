@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A little something for your birthday</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,300;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky-top:#1B2234; --sky-mid:#2C2A41; --sky-bot:#3E3045; --horizon:#6A4A48;
+  --gold:#E6BE7A; --cream:#F5EDE0; --mist:#CFC8DA; --ink:#2B3442; --paper:#F5EDE0;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --cream:#F5EDE0; --mist:#CFC8DA; } }
+:root[data-theme="dark"]{ --cream:#F5EDE0; --mist:#CFC8DA; }
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;height:100%;overflow:hidden;color:var(--cream);
+  font-family:'EB Garamond',Georgia,'Times New Roman',serif;
+  background:
+    radial-gradient(130% 60% at 50% 118%, var(--horizon) 0%, rgba(106,74,72,0) 60%),
+    linear-gradient(180deg,var(--sky-top) 0%,var(--sky-mid) 58%,var(--sky-bot) 100%);
+  background-color:var(--sky-top);
+  -webkit-tap-highlight-color:transparent;
+}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.layer{position:fixed;left:0;right:0;display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:0 24px;pointer-events:none;opacity:0;transform:translateY(10px);
+  transition:opacity .9s ease, transform .9s ease}
+.layer.show{opacity:1;transform:none}
+.layer button,.layer a{pointer-events:auto}
+.display{font-family:'Cormorant Garamond',Georgia,serif;font-weight:400;font-style:italic;margin:0;line-height:1.1}
+.soft{color:var(--mist);margin:0;font-size:18px;line-height:1.5}
+
+/* balloon stage */
+#intro{top:calc(env(safe-area-inset-top,0px) + 7vh);bottom:calc(env(safe-area-inset-bottom,0px) + 5vh);justify-content:space-between}
+#intro .display{font-size:clamp(26px,6.4vw,38px)}
+#balloon{background:none;border:0;padding:0;cursor:pointer;width:min(54vw,230px);
+  animation:bob 5.5s ease-in-out infinite;transform-origin:50% 90%;border-radius:40%}
+#balloon svg{width:100%;height:auto;display:block;overflow:visible}
+#balloon:focus-visible{outline:2px solid var(--gold);outline-offset:8px}
+#balloon.popped{animation:pop .16s ease-out forwards}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-16px) rotate(2.5deg)}}
+@keyframes pop{to{transform:scale(1.25);opacity:0}}
+
+/* cake stage */
+#cakeUI{top:calc(env(safe-area-inset-top,0px) + 6vh)}
+#cakeUI .display{font-size:clamp(30px,7.5vw,46px)}
+#cakeUI .soft{margin-top:10px}
+#controls{bottom:calc(env(safe-area-inset-bottom,0px) + 4vh);gap:12px}
+.btn{font:500 17px/1 'EB Garamond',Georgia,serif;color:var(--sky-top);background:var(--gold);border:0;border-radius:999px;
+  min-height:50px;padding:0 26px;cursor:pointer;box-shadow:0 0 30px rgba(230,190,122,.28)}
+.btn:hover{background:#EFCB8C}
+.btn:focus-visible,.link:focus-visible,.icon:focus-visible{outline:2px solid var(--cream);outline-offset:3px}
+.link{font:400 16px/1 'EB Garamond',Georgia,serif;color:var(--mist);background:none;border:0;text-decoration:underline;
+  text-underline-offset:4px;min-height:44px;padding:0 12px;cursor:pointer}
+.link:hover{color:var(--cream)}
+#controls .soft{font-size:16px}
+#blow{min-height:58px;padding:0 32px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  transition:transform .15s ease, box-shadow .15s ease}
+#blow.on{transform:scale(.96);box-shadow:0 0 50px rgba(230,190,122,.6)}
+
+/* final */
+#final{top:54%;gap:14px}
+#f1{font-size:clamp(19px,4.6vw,23px);transition:opacity 1.2s ease}
+#f2{font-size:clamp(32px,8.4vw,54px)}
+#open{margin-top:18px;opacity:0;transition:opacity 1s ease}
+#open.show{opacity:1}
+
+/* sound */
+.icon{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;z-index:5;width:44px;height:44px;border-radius:50%;
+  border:1px solid rgba(207,200,218,.35);background:rgba(27,34,52,.35);color:var(--mist);cursor:pointer;display:grid;place-items:center}
+.icon svg{width:20px;height:20px}
+
+/* letter */
+#letter{position:fixed;inset:0;z-index:10;display:flex;justify-content:center;align-items:center;overflow-y:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 28px) 16px calc(env(safe-area-inset-bottom,0px) + 28px);
+  background:rgba(20,24,38,.55);opacity:0;pointer-events:none;transition:opacity .8s ease}
+#letter.show{opacity:1;pointer-events:auto}
+.paper{width:100%;max-width:34rem;background:var(--paper);color:var(--ink);border-radius:4px;
+  padding:clamp(28px,7vw,52px);box-shadow:0 30px 80px rgba(0,0,0,.45);transform:translateY(24px);transition:transform .9s ease;margin:auto 0}
+#letter.show .paper{transform:none}
+.paper .ring{display:block;margin:0 auto 14px;width:48px;height:48px}
+.pg{display:none;outline:none}
+.pg.on{display:block;animation:pgIn .7s ease both}
+@keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.nav{display:flex;justify-content:center;margin-top:24px}
+.btn.dark{background:#2B3442;color:#F5EDE0;box-shadow:none}
+.btn.dark:hover{background:#3A4556}
+.btn.dark:focus-visible{outline-color:#2B3442}
+.paper p{margin:0 0 14px;font-size:18px;line-height:1.62}
+.paper .greet{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:30px;margin-bottom:8px}
+.paper .first{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:24px;margin-bottom:18px}
+.paper .sign{margin-top:22px;margin-bottom:2px;color:#4A5563}
+.paper .name{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:30px;margin:0}
+.more{display:flex;flex-direction:column;align-items:center;margin-top:26px;gap:6px}
+.more .hint{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:22px;line-height:1.3;color:#4A5563;margin:0;text-align:center}
+.more .btn{background:#2B3442;color:#F5EDE0;box-shadow:none;margin-top:10px}
+.more .btn:hover{background:#3A4556}
+.more .btn:focus-visible{outline-color:#2B3442}
+.voucher{margin-top:0;background:#232B3D;color:#F5EDE0;border-radius:6px;padding:22px 20px 20px;
+  border:1px solid rgba(230,190,122,.55);box-shadow:inset 0 0 0 6px #232B3D, inset 0 0 0 7px rgba(230,190,122,.3);
+  opacity:0;transform:translateY(14px);transition:opacity .9s ease, transform .9s ease;text-align:center}
+.pg.on .voucher{opacity:1;transform:none}
+.voucher .v-kick{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:20px;color:#E6BE7A;margin:0 0 6px}
+.voucher h2{font-family:'Cormorant Garamond',Georgia,serif;font-weight:500;font-size:28px;line-height:1.15;margin:0}
+.voucher .v-place{color:#CFC8DA;font-size:16px;margin:6px 0 14px}
+.voucher dl{display:grid;grid-template-columns:auto 1fr;gap:6px 18px;text-align:left;margin:0 auto;max-width:22rem;
+  border-top:1px solid rgba(230,190,122,.3);border-bottom:1px solid rgba(230,190,122,.3);padding:12px 4px}
+.voucher dt{color:#CFC8DA;font-size:15px}
+.voucher dd{margin:0;font-size:17px}
+.voucher .code{font-family:'EB Garamond',Georgia,serif;font-weight:500;letter-spacing:.14em;font-size:20px;color:#E6BE7A}
+.voucher .v-how{font-size:16px;line-height:1.5;color:#E4DDEB;margin:14px 0 4px}
+.voucher .v-note{font-size:14px;font-style:italic;color:#CFC8DA;margin:14px 0 0}
+.voucher a{color:#E6BE7A;text-underline-offset:3px}
+.voucher a:hover{color:#F3D29A}
+.voucher .v-addr{font-size:15px;line-height:1.45;color:#F5EDE0;margin:10px 0 0}
+.paper .row{display:flex;justify-content:center;gap:0 4px;margin-top:18px;flex-wrap:wrap}
+.paper .link{color:#4A5563}
+.paper .link:hover{color:var(--ink)}
+.paper .link:focus-visible{outline-color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (prefers-reduced-motion: reduce){
+  #balloon{animation:none}
+  .layer,#letter,.paper{transition-duration:.01s}
+  .pg.on{animation:none}
+}
+</style>
+</head>
+<body>
+<canvas id="c" aria-hidden="true"></canvas>
+
+<button class="icon" id="snd" aria-label="Turn sound off" aria-pressed="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path id="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>
+</button>
+
+<div class="layer show" id="intro">
+  <p class="display">For you, on the twenty-ninth.</p>
+  <button id="balloon" aria-label="Pop the balloon">
+    <svg viewBox="0 0 200 330" aria-hidden="true">
+      <defs>
+        <radialGradient id="bg" cx="36%" cy="30%" r="75%">
+          <stop offset="0" stop-color="#FFF3D6"/>
+          <stop offset=".42" stop-color="#EAC07C"/>
+          <stop offset="1" stop-color="#A9743F"/>
+        </radialGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#F3C987" stop-opacity=".35"/>
+          <stop offset="1" stop-color="#F3C987" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="100" cy="105" r="140" fill="url(#glow)"/>
+      <path d="M100 8C150 8 182 48 182 98c0 58-44 108-82 116C62 206 18 156 18 98 18 48 50 8 100 8z" fill="url(#bg)"/>
+      <ellipse cx="70" cy="62" rx="16" ry="26" fill="#fff" opacity=".42" transform="rotate(-24 70 62)"/>
+      <path d="M92 213l8 11 8-11z" fill="#B07D46"/>
+      <path d="M100 224c-10 22 12 34 0 56s10 34 2 48" fill="none" stroke="#CFC8DA" stroke-opacity=".7" stroke-width="1.4"/>
+    </svg>
+  </button>
+  <p class="soft">Turn your sound up, then tap the balloon.</p>
+</div>
+
+<div class="layer" id="cakeUI" aria-live="polite">
+  <h1 class="display">Thirty-five candles.</h1>
+  <p class="soft" id="cakeHint">Make a wish, then blow them out.</p>
+</div>
+
+<div class="layer" id="controls">
+  <button class="btn" id="blow">Tap to blow</button>
+</div>
+
+<div class="layer" id="final" aria-live="polite">
+  <p class="soft" id="f1">Whatever you wished for, I hope it finds you.</p>
+  <h1 class="display" id="f2">Happy 35th birthday, <span class="her"></span>.</h1>
+  <button class="btn" id="open">Open your card</button>
+</div>
+
+<div id="letter" role="dialog" aria-modal="true" aria-label="Birthday card">
+  <article class="paper" id="paper">
+    <div class="pg on" id="pg1" tabindex="-1">
+      <svg class="ring" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="#A87C45" stroke-width="1"/><circle cx="32" cy="32" r="30" fill="none" stroke="#A87C45" stroke-opacity=".4" stroke-width=".6"/></svg>
+      <p class="greet"><span class="her"></span>,</p>
+      <p class="first">Happy 35th birthday.</p>
+      <p>Today I simply wanted to celebrate you. Time and distance have changed a great deal between us, but they haven’t changed how much you matter to me, or the love and care I hold for you.</p>
+      <p>I’m grateful for the life we’ve shared: the ordinary days and the remarkable ones, the laughter, and everything we learned along the way. I carry those memories with real tenderness.</p>
+      <div class="nav"><button class="btn dark" id="next">Continue</button></div>
+    </div>
+    <div class="pg" id="pg2" tabindex="-1">
+      <p>For this year of yours, I hope for peace, good health, and work and moments that fulfil you. I hope for easy mornings, good company, and days that feel light. You deserve to be celebrated, today especially.</p>
+      <p>There is nothing you need to say in return. I only wanted you to know that you are thought of, warmly and with respect.</p>
+      <p><em>Happy birthday.</em></p>
+      <p class="sign">With love,</p>
+      <p class="name me"></p>
+      <div class="more">
+        <p class="hint">And one more thing, for an afternoon that’s just yours.</p>
+        <button class="btn dark" id="reveal">Open it</button>
+      </div>
+    </div>
+    <div class="pg" id="pg3" tabindex="-1">
+      <section class="voucher" aria-label="Gift voucher">
+        <p class="v-kick">A gift voucher for you</p>
+        <h2>De-Stress Massage, 55 minutes</h2>
+        <p class="v-place">Montpellier Massage &amp; Beauty, Cheltenham</p>
+        <dl>
+          <dt>For</dt><dd>Martha Gwatirera</dd>
+          <dt>Value</dt><dd>£80</dd>
+          <dt>Code</dt><dd class="code">1D800F</dd>
+          <dt>Valid until</dt><dd>23 September 2027</dd>
+        </dl>
+        <p class="v-how">It’s all arranged and paid for. Whenever it suits you, just give them a call and mention the code.</p>
+        <p class="v-addr">Montpellier Massage &amp; Beauty, The Terrace<br>Rotunda Terrace, 11 Montpellier Street<br>Cheltenham GL50 1SW</p>
+        <p class="v-addr"><a href="tel:07961737720">07961 737720</a></p>
+        <p class="v-note">MM will get a quiet note that this reached you. Nothing more.</p>
+      </section>
+      <div class="row">
+        <button class="link" id="reread">Read the letter again</button>
+        <button class="link" id="again">Watch it again</button>
+        <button class="link" id="close">Back to the stars</button>
+      </div>
+    </div>
+  </article>
+</div>
+
+<script>
+// ---- Names: change these two lines ----
+const HER_NAME = "Marty";
+const YOUR_NAME = "MM";
+
+// ---- Notification when she opens the voucher ----
+// Fill in either or both. Leave blank ("") to switch that one off.
+const NOTIFY = {
+  whatsappPhone: "+447729856699",   // your number in international format, e.g. "+447700900123"
+  whatsappApiKey: "3783603",  // the key CallMeBot sends you on WhatsApp
+  ntfyTopic: ""        // optional: the topic name you subscribe to in the ntfy app
+};
+let notified = false;
+function notifyOpened(){
+  if (notified) return; notified = true;
+  const when = new Date().toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const msg = `Marty opened the birthday voucher (${when}).`;
+  try {
+    if (NOTIFY.whatsappPhone && NOTIFY.whatsappApiKey){
+      const url = 'https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(NOTIFY.whatsappPhone) +
+        '&text=' + encodeURIComponent(msg) + '&apikey=' + encodeURIComponent(NOTIFY.whatsappApiKey);
+      const img = new Image(); img.referrerPolicy = 'no-referrer'; img.src = url;
+    }
+    if (NOTIFY.ntfyTopic){
+      fetch('https://ntfy.sh/' + encodeURIComponent(NOTIFY.ntfyTopic), { method: 'POST', body: msg, keepalive: true }).catch(() => {});
+    }
+  } catch (e) {}
+}
+
+document.querySelectorAll('.her').forEach(el => el.textContent = HER_NAME);
+document.querySelectorAll('.me').forEach(el => el.textContent = YOUR_NAME);
+
+const $ = id => document.getElementById(id);
+const cv = $('c'), ctx = cv.getContext('2d');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let W = 0, H = 0, DPR = 1, cx = 0, cy = 0, R = 100;
+let stage = 'balloon';
+let bgStars = [], confetti = [], smoke = [], risers = [], wishStars = [], candles = [];
+let cakeT = 0, cakeOut = 0, ready = false, wind = 0, ringSpin = 0;
+let gustRun = null;
+
+function resize(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  cx = W / 2; cy = H * 0.58;
+  R = Math.min(W * 0.37, H * 0.23, 250);
+  bgStars = Array.from({length: Math.round(W * H / 4200)}, () => ({
+    x: Math.random() * W, y: Math.random() * H * 0.8, r: Math.random() * 1.1 + 0.25,
+    p: Math.random() * 6.28, s: 0.4 + Math.random() * 1.4
+  }));
+}
+window.addEventListener('resize', resize);
+resize();
+
+function initCandles(){
+  candles = [];
+  for (let i = 0; i < 35; i++){
+    candles.push({ a: -Math.PI / 2 + i / 35 * Math.PI * 2, state: 'unlit', glow: 0,
+      igniteAt: 0, ph: Math.random() * 100, lean: 0, push: 0, tone: i % 2 });
+  }
+}
+initCandles();
+
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+function cakeTop(){ return cy + (1 - easeOut(cakeT)) * H * 0.7 + easeOut(cakeOut) * H * 0.7; }
+function geom(c){
+  const top = cakeTop();
+  const px = cx + Math.cos(c.a) * R * 0.8;
+  const py = top + Math.sin(c.a) * R * 0.8 * 0.34;
+  const s = 0.84 + 0.16 * (Math.sin(c.a) + 1) / 2;
+  const ch = R * 0.34 * s;
+  return { x: px, y: py, s, ch, fx: px, fy: py - ch - R * 0.03 * s, fh: R * 0.1 * s };
+}
+
+// ---------------- audio ----------------
+let ac = null, master = null, muted = false, noise = null, outEl = null;
+function initAudio(){
+  // Ask the phone to treat this as media playback (lets sound play on iPhones even when the ring switch is on silent, where supported)
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  if (!ac){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { ac = new AC({ latencyHint: 'interactive' }); } catch (e) { ac = new AC(); }
+    master = ac.createGain(); master.gain.value = muted ? 0 : 0.9;
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (isIOS && ac.createMediaStreamDestination){
+      const dest = ac.createMediaStreamDestination();
+      master.connect(dest);
+      outEl = document.createElement('audio');
+      outEl.setAttribute('playsinline', ''); outEl.autoplay = true;
+      outEl.srcObject = dest.stream;
+      document.body.appendChild(outEl);
+    } else {
+      master.connect(ac.destination);
+    }
+    noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const d = noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  if (ac.state !== 'running' && ac.resume) ac.resume();
+  if (outEl && outEl.paused){
+    const pr = outEl.play();
+    if (pr && pr.catch) pr.catch(() => {
+      // media route refused: fall back to normal speaker output
+      try { master.disconnect(); } catch (e) {}
+      master.connect(ac.destination); outEl = null;
+    });
+  }
+  quietLater(4000);
+  // Play a silent blip inside the tap itself: this is what unlocks audio on iOS and some Android browsers
+  try {
+    const b = ac.createBuffer(1, 1, 22050), s = ac.createBufferSource();
+    s.buffer = b; s.connect(ac.destination); s.start(0);
+  } catch (e) {}
+}
+// Any touch anywhere also unlocks sound
+['touchend', 'click', 'keydown'].forEach(ev => window.addEventListener(ev, initAudio, { passive: true }));
+function noiseHit(dur, type, freq, vol, when){
+  if (!ac) return; const t = when || ac.currentTime;
+  const src = ac.createBufferSource(); src.buffer = noise;
+  const f = ac.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+  const g = ac.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t + dur + 0.05);
+}
+function playPop(){
+  if (!ac) return; const t = ac.currentTime;
+  noiseHit(0.22, 'bandpass', 1600, 0.9, t);
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.frequency.setValueAtTime(160, t); o.frequency.exponentialRampToValueAtTime(45, t + 0.18);
+  g.gain.setValueAtTime(0.6, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.25);
+}
+let lastPuff = 0;
+function playPuff(){
+  if (!ac) return; const n = performance.now(); if (n - lastPuff < 70) return; lastPuff = n;
+  noiseHit(0.28, 'lowpass', 900, 0.12);
+}
+function bell(freq, t, dur, vol){
+  [[1, 1], [2, 0.28], [3.01, 0.08]].forEach(([m, v]) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = freq * m;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * v, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+  });
+}
+function pad(freq, t, dur, vol){
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.25);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + 0.05);
+}
+let quietTimer = null, busyUntil = 0;
+function quietLater(ms){
+  clearTimeout(quietTimer);
+  const wait = Math.max(ms, busyUntil - performance.now() + 1500);
+  quietTimer = setTimeout(() => {
+    if (ac && ac.state === 'running' && ac.suspend) ac.suspend();
+    if (outEl && !outEl.paused) outEl.pause();
+  }, wait);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) quietLater(0); });
+function playSong(){
+  if (!ac) return;
+  if (ac.state !== 'running' && ac.resume) ac.resume();
+  if (outEl && outEl.paused){ const pr = outEl.play(); if (pr && pr.catch) pr.catch(() => {}); }
+  const G4=392, A4=440, B4=493.88, C5=523.25, D5=587.33, E5=659.25, F5=698.46, G5=783.99;
+  const mel = [
+    [G4,.75],[G4,.25],[A4,1],[G4,1],[C5,1],[B4,2],
+    [G4,.75],[G4,.25],[A4,1],[G4,1],[D5,1],[C5,2],
+    [G4,.75],[G4,.25],[G5,1],[E5,1],[C5,1],[B4,1],[A4,1.5],
+    [F5,.75],[F5,.25],[E5,1],[C5,1],[D5,1],[C5,3]
+  ];
+  const beat = 0.52, t0 = ac.currentTime + 0.15;
+  busyUntil = performance.now() + (0.15 + 24.5 * beat + 3.5) * 1000; quietLater(0);
+  let b = 0;
+  mel.forEach(([f, d]) => { bell(f * 2, t0 + b * beat, Math.max(1.2, d * beat * 2.2), 0.16); b += d; });
+  const C3=130.81, G2=98, F2=87.31;
+  [[1,C3],[4,G2],[7,G2],[10,C3],[13,C3],[16,F2],[19.5,C3],[21.5,G2],[22.5,C3]]
+    .forEach(([bt, f]) => pad(f * 2, t0 + bt * beat, 2.6, 0.07));
+}
+$('snd').addEventListener('click', () => {
+  muted = !muted;
+  if (master) master.gain.value = muted ? 0 : 0.8;
+  $('snd').setAttribute('aria-pressed', String(!muted));
+  $('snd').setAttribute('aria-label', muted ? 'Turn sound on' : 'Turn sound off');
+  $('wave').style.opacity = muted ? 0.15 : 1;
+});
+
+let micStream = null, analyser = null, micBuf = null;
+function stopMic(){}
+
+// ---------------- stages ----------------
+$('balloon').addEventListener('click', () => {
+  if (stage !== 'balloon') return;
+  initAudio(); playPop();
+  const r = $('balloon').getBoundingClientRect();
+  burst(r.left + r.width / 2, r.top + r.height * 0.33);
+  $('balloon').classList.add('popped');
+  $('intro').classList.remove('show');
+  stage = 'cake';
+  setTimeout(startCake, reduce ? 200 : 900);
+});
+
+function burst(x, y){
+  const cols = ['#E6BE7A', '#F5EDE0', '#A9B8A0', '#9FB2CC', '#D9AFA6', '#F0D39C'];
+  for (let i = 0; i < 170; i++){
+    const a = Math.random() * Math.PI * 2, sp = 180 + Math.random() * 620;
+    confetti.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 180,
+      rot: Math.random() * 6, vr: (Math.random() - .5) * 14, w: 5 + Math.random() * 7, h: 3 + Math.random() * 4,
+      c: cols[i % cols.length], life: 3 + Math.random() * 2.5, round: Math.random() < 0.25 });
+  }
+}
+
+function startCake(){
+  const now = performance.now();
+  candles.forEach((c, i) => c.igniteAt = now + 1300 + i * 55);
+  $('cakeUI').classList.add('show');
+}
+
+function extinguish(c){
+  if (c.state !== 'lit') return;
+  c.state = 'out'; playPuff();
+  const g = geom(c);
+  for (let k = 0; k < 7; k++){
+    smoke.push({ x: g.fx + (Math.random() - .5) * 3, y: g.fy - g.fh * 0.4, vx: (Math.random() - .5) * 14 + wind * 20,
+      vy: -30 - Math.random() * 30, r: 2 + Math.random() * 2, life: 0, max: 1.8 + Math.random() * 1.6 });
+  }
+}
+
+let holding = false, holdTime = 0;
+function holdEnd(){}
+$('blow').addEventListener('click', () => {
+  initAudio();
+  if (!ready || stage !== 'cake' || gustRun) return;
+  noiseHit(1.3, 'lowpass', 850, 0.4);
+  const order = candles.filter(c => c.state === 'lit').sort((a, b) => geom(a).x - geom(b).x);
+  gustRun = { t: 0, order, i: 0 };
+  $('blow').disabled = true;
+});
+
+// ---- swipe or tap across the flames ----
+function segDist(px, py, x0, y0, x1, y1){
+  const dx = x1 - x0, dy = y1 - y0, L = dx * dx + dy * dy;
+  let t = L ? ((px - x0) * dx + (py - y0) * dy) / L : 0; t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x0 + t * dx), py - (y0 + t * dy));
+}
+function sweep(x0, y0, x1, y1){
+  if (stage !== 'cake' || !ready) return;
+  const hit = Math.max(30, R * 0.2), vx = x1 - x0;
+  candles.forEach(c => {
+    if (c.state !== 'lit') return;
+    const g = geom(c), d = segDist(g.fx, g.fy - g.fh * 0.5, x0, y0, x1, y1);
+    if (d < hit) extinguish(c);
+    else if (d < R * 0.6) c.push += Math.max(-1, Math.min(1, vx * 0.06));
+  });
+}
+let lastPtr = null;
+function ptStart(x, y){ initAudio(); lastPtr = { x, y }; sweep(x, y, x, y); }
+function ptMove(x, y){ const p = lastPtr || { x, y }; sweep(p.x, p.y, x, y); lastPtr = { x, y }; }
+cv.addEventListener('pointerdown', e => { try { cv.setPointerCapture(e.pointerId); } catch (_) {} ptStart(e.clientX, e.clientY); });
+cv.addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.buttons || e.pressure > 0) ptMove(e.clientX, e.clientY); });
+cv.addEventListener('pointerup', () => { lastPtr = null; });
+// Touch fallback for browsers that don't pass pointer moves through
+cv.addEventListener('touchstart', e => { const t = e.touches[0]; if (t){ e.preventDefault(); ptStart(t.clientX, t.clientY); } }, { passive: false });
+cv.addEventListener('touchmove', e => { const t = e.touches[0]; if (t){ e.preventDefault(); ptMove(t.clientX, t.clientY); } }, { passive: false });
+cv.addEventListener('touchend', () => { lastPtr = null; });
+
+function finish(){
+  stage = 'done'; stopMic(); holdEnd();
+  if (ac && ac.state !== 'running' && ac.resume) ac.resume();
+  $('controls').classList.remove('show');
+  $('cakeUI').classList.remove('show');
+  const now = performance.now();
+  const Rr = ringR();
+  candles.forEach((c, i) => {
+    const g = geom(c);
+    risers.push({ sx: g.fx, sy: g.fy - g.fh * 0.5, idx: i, t0: now + 1200 + i * 60 + Math.random() * 300,
+      dur: 2400 + Math.random() * 900, wob: (Math.random() - .5) * Rr * 1.4 });
+  });
+  setTimeout(() => { cakeOutGo = true; }, 1300);
+  setTimeout(() => playSong(), reduce ? 400 : 1700);
+  setTimeout(() => { $('final').classList.add('show'); $('f2').style.opacity = 0; }, 2600);
+  setTimeout(() => { $('f1').style.opacity = 0; }, 7600);
+  setTimeout(() => { $('f2').style.transition = 'opacity 1.4s ease'; $('f2').style.opacity = 1; }, 8200);
+  setTimeout(() => { $('open').classList.add('show'); }, 10800);
+}
+let cakeOutGo = false;
+function ringR(){ return Math.min(W * 0.33, H * 0.19, 220); }
+function ringPos(i){
+  const a = -Math.PI / 2 + i / 35 * Math.PI * 2 + ringSpin;
+  const Rr = ringR();
+  return { x: W / 2 + Math.cos(a) * Rr, y: H * 0.3 + Math.sin(a) * Rr };
+}
+
+function showPage(n){
+  ['pg1', 'pg2', 'pg3'].forEach((id, i) => $(id).classList.toggle('on', i + 1 === n));
+  fitPaper();
+  $('letter').scrollTop = 0;
+  $('pg' + n).focus({ preventScroll: true });
+}
+// Shrink the card just enough that each page fits on the screen without scrolling
+function fitPaper(){
+  const paper = $('paper'); paper.style.zoom = 1;
+  const cs = getComputedStyle($('letter'));
+  const avail = $('letter').clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 4;
+  const h = paper.offsetHeight;
+  if (h > avail) paper.style.zoom = Math.max(0.72, avail / h);
+}
+window.addEventListener('resize', () => { if ($('letter').classList.contains('show')) fitPaper(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if ($('letter').classList.contains('show')) fitPaper(); });
+$('open').addEventListener('click', () => { $('letter').classList.add('show'); showPage(1); });
+$('next').addEventListener('click', () => showPage(2));
+$('reread').addEventListener('click', () => showPage(1));
+$('close').addEventListener('click', () => $('letter').classList.remove('show'));
+$('again').addEventListener('click', resetAll);
+
+$('reveal').addEventListener('click', () => {
+  initAudio();
+  showPage(3);
+  notifyOpened();
+  if (ac){ const t = ac.currentTime; [1046.5, 1318.5, 1568].forEach((f, i) => bell(f, t + i * 0.12, 1.6, 0.1)); }
+});
+function resetAll(){
+  ['pg1', 'pg2', 'pg3'].forEach((id, i) => $(id).classList.toggle('on', i === 0));
+  $('letter').classList.remove('show');
+  ['final', 'controls', 'cakeUI'].forEach(id => $(id).classList.remove('show'));
+  $('open').classList.remove('show');
+  $('f1').style.opacity = 1; $('f2').style.opacity = 0;
+  $('cakeHint').textContent = 'Make a wish, then blow them out.';
+  $('blow').disabled = false;
+  confetti = []; smoke = []; risers = []; wishStars = [];
+  cakeT = 0; cakeOut = 0; cakeOutGo = false; ready = false; wind = 0; gustRun = null;
+  initCandles();
+  const b = $('balloon'); b.classList.remove('popped'); void b.offsetWidth;
+  $('intro').classList.add('show');
+  stage = 'balloon';
+}
+
+// ---------------- loop ----------------
+let last = performance.now();
+function update(dt, now){
+  if (stage === 'cake' || stage === 'done') cakeT = Math.min(1, cakeT + dt / (reduce ? 0.3 : 1.5));
+  if (cakeOutGo) cakeOut = Math.min(1, cakeOut + dt / 2.2);
+  ringSpin += dt * 0.025;
+
+  // mic wind
+  let target = 0;
+  if (analyser){
+    analyser.getFloatTimeDomainData(micBuf);
+    let s = 0; for (let i = 0; i < micBuf.length; i++) s += micBuf[i] * micBuf[i];
+    const rms = Math.sqrt(s / micBuf.length);
+    target = Math.max(0, Math.min(1, (rms - 0.035) / 0.16));
+  }
+  if (holding){
+    holdTime += dt;
+    target = Math.max(target, Math.min(1, 0.45 + holdTime * 0.45));
+  }
+  if (gustRun){
+    gustRun.t += dt; target = Math.max(target, 0.85);
+    const due = Math.floor(gustRun.t / 1.3 * gustRun.order.length);
+    while (gustRun.i < Math.min(due, gustRun.order.length)) extinguish(gustRun.order[gustRun.i++]);
+    if (gustRun.i >= gustRun.order.length) gustRun = null;
+  }
+  wind += (target - wind) * Math.min(1, dt * 8);
+
+  let litCount = 0, allLit = true;
+  candles.forEach(c => {
+    if (c.state === 'unlit'){ allLit = false; if (c.igniteAt && now >= c.igniteAt){ c.state = 'lit'; } }
+    if (c.state === 'lit'){ litCount++; c.glow = Math.min(1, c.glow + dt * 2.5); }
+    c.push *= Math.pow(0.04, dt);
+    const tl = Math.max(-1, Math.min(1, wind * 0.9 + c.push));
+    c.lean += (tl - c.lean) * Math.min(1, dt * 7);
+    if (c.state === 'lit' && ready && wind > 0.32 && Math.random() < (wind - 0.32) * 5 * dt) extinguish(c);
+  });
+  if (stage === 'cake' && allLit && !ready){ ready = true; $('controls').classList.add('show'); }
+  if (stage === 'cake' && ready && litCount === 0) finish();
+
+  confetti.forEach(p => {
+    p.vx *= Math.pow(0.35, dt); p.vy = p.vy * Math.pow(0.5, dt) + 520 * dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt; p.life -= dt;
+  });
+  confetti = confetti.filter(p => p.life > 0 && p.y < H + 30);
+  smoke.forEach(s => { s.life += dt; s.x += s.vx * dt + Math.sin(s.life * 3 + s.r) * 8 * dt; s.y += s.vy * dt; s.r += dt * 6; });
+  smoke = smoke.filter(s => s.life < s.max);
+
+  risers = risers.filter(r => {
+    if (now >= r.t0 + r.dur){ wishStars.push({ idx: r.idx, p: Math.random() * 6.28, born: now }); return false; }
+    return true;
+  });
+}
+
+function draw(now){
+  ctx.clearRect(0, 0, W, H);
+  const t = now / 1000;
+  // background stars
+  bgStars.forEach(s => {
+    const a = 0.35 + 0.35 * Math.sin(t * s.s + s.p);
+    ctx.fillStyle = `rgba(235,228,245,${a})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.283); ctx.fill();
+  });
+
+  if (stage !== 'balloon' && cakeT > 0 && cakeOut < 1) drawCake(t);
+
+  // smoke
+  smoke.forEach(s => {
+    const a = 0.22 * (1 - s.life / s.max);
+    ctx.fillStyle = `rgba(222,216,232,${a})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.283); ctx.fill();
+  });
+
+  // risers
+  risers.forEach(r => {
+    if (now < r.t0) return;
+    const p = Math.min(1, (now - r.t0) / r.dur), e = 1 - Math.pow(1 - p, 2.2);
+    const tp = ringPos(r.idx);
+    const mx = (r.sx + tp.x) / 2 + r.wob, my = Math.min(r.sy, tp.y) - 40;
+    const x = (1 - e) * (1 - e) * r.sx + 2 * (1 - e) * e * mx + e * e * tp.x;
+    const y = (1 - e) * (1 - e) * r.sy + 2 * (1 - e) * e * my + e * e * tp.y;
+    glowDot(x, y, 2.2, 0.9, r.idx === 34);
+  });
+  // wish ring
+  wishStars.forEach(w => {
+    const p = ringPos(w.idx), fresh = Math.max(0, 1 - (now - w.born) / 900);
+    const tw = 0.75 + 0.25 * Math.sin(t * 1.6 + w.p);
+    glowDot(p.x, p.y, (w.idx === 34 ? 3.6 : 1.9) + fresh * 3, tw, w.idx === 34);
+  });
+
+  // confetti
+  confetti.forEach(p => {
+    ctx.save(); ctx.globalAlpha = Math.min(1, p.life); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+    ctx.fillStyle = p.c;
+    if (p.round){ ctx.beginPath(); ctx.arc(0, 0, p.h * 0.6, 0, 6.283); ctx.fill(); }
+    else { ctx.scale(1, Math.cos(p.rot * 1.7)); ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); }
+    ctx.restore();
+  });
+}
+
+function glowDot(x, y, r, a, gold){
+  const col = gold ? '255,206,130' : '255,240,214';
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r * 7);
+  g.addColorStop(0, `rgba(${col},${0.5 * a})`); g.addColorStop(1, `rgba(${col},0)`);
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 7, 0, 6.283); ctx.fill();
+  ctx.fillStyle = `rgba(${col},${a})`; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+
+function drawCake(t){
+  const top = cakeTop(), rx = R, ry = R * 0.34, h = R * 0.62, x = cx;
+  ctx.save();
+  ctx.globalAlpha = 1 - easeOut(cakeOut);
+  // warm glow on the table from the candles
+  const lit = candles.reduce((n, c) => n + (c.state === 'lit' ? c.glow : 0), 0) / 35;
+  if (lit > 0){
+    const g = ctx.createRadialGradient(x, top, 0, x, top, R * 2.6);
+    g.addColorStop(0, `rgba(255,190,110,${0.22 * lit})`); g.addColorStop(1, 'rgba(255,190,110,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, top, R * 2.6, 0, 6.283); ctx.fill();
+  }
+  // plate
+  ctx.fillStyle = 'rgba(10,12,22,.35)';
+  ctx.beginPath(); ctx.ellipse(x, top + h + ry * 0.35, rx * 1.32, ry * 1.2, 0, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#D9D3DF';
+  ctx.beginPath(); ctx.ellipse(x, top + h + 6, rx * 1.2, ry * 1.08, 0, 0, 6.283); ctx.fill();
+  // body
+  const bg = ctx.createLinearGradient(x - rx, 0, x + rx, 0);
+  bg.addColorStop(0, '#B89A76'); bg.addColorStop(0.45, '#EBDAC0'); bg.addColorStop(1, '#A98A68');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.moveTo(x - rx, top); ctx.lineTo(x - rx, top + h);
+  ctx.ellipse(x, top + h, rx, ry, 0, Math.PI, 0, true);
+  ctx.lineTo(x + rx, top); ctx.closePath(); ctx.fill();
+  // ribbon
+  ctx.strokeStyle = 'rgba(214,168,98,.9)'; ctx.lineWidth = R * 0.07;
+  ctx.beginPath(); ctx.ellipse(x, top + h * 0.62, rx, ry, 0, Math.PI, 0, true); ctx.stroke();
+  // frosting drips
+  ctx.fillStyle = '#F4EBDD';
+  for (let i = 0; i <= 14; i++){
+    const a = Math.PI - i / 14 * Math.PI;
+    const dx = x + Math.cos(a) * rx * 0.99, dy = top + Math.sin(a) * ry;
+    const len = R * (0.06 + 0.07 * ((i * 7) % 5) / 4);
+    ctx.beginPath(); ctx.ellipse(dx, dy + len * 0.6, R * 0.045, len, 0, 0, 6.283); ctx.fill();
+  }
+  // top
+  ctx.beginPath(); ctx.ellipse(x, top, rx, ry, 0, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.35)';
+  ctx.beginPath(); ctx.ellipse(x - rx * 0.1, top - ry * 0.12, rx * 0.72, ry * 0.55, 0, 0, 6.283); ctx.fill();
+
+  // candles back to front
+  const list = candles.slice().sort((a, b) => Math.sin(a.a) - Math.sin(b.a));
+  list.forEach(c => {
+    const g = geom(c), cw = R * 0.045 * g.s;
+    ctx.fillStyle = c.tone ? '#E9CF9E' : '#F7F1E6';
+    ctx.fillRect(g.x - cw / 2, g.y - g.ch, cw, g.ch);
+    ctx.fillStyle = 'rgba(120,90,60,.22)';
+    ctx.fillRect(g.x + cw * 0.1, g.y - g.ch, cw * 0.4, g.ch);
+    ctx.strokeStyle = '#3B3131'; ctx.lineWidth = Math.max(1, cw * 0.2);
+    ctx.beginPath(); ctx.moveTo(g.x, g.y - g.ch); ctx.lineTo(g.x + c.lean * 2, g.fy + g.fh * 0.05); ctx.stroke();
+    if (c.state === 'lit'){
+      const flick = Math.sin(t * 9 + c.ph) * 0.5 + Math.sin(t * 23 + c.ph * 2) * 0.3;
+      drawFlame(g.fx, g.fy, g.fh, c.lean, c.glow, flick);
+    } else if (c.state === 'out'){
+      ctx.fillStyle = 'rgba(240,120,60,.5)';
+      ctx.beginPath(); ctx.arc(g.x, g.fy + g.fh * 0.05, Math.max(1, cw * 0.18), 0, 6.283); ctx.fill();
+    }
+  });
+  ctx.restore();
+}
+
+function drawFlame(x, y, h, lean, alpha, flick){
+  const w = h * 0.42, tipx = x + lean * h * 0.9, tipy = y - h * (1 + flick * 0.12 - Math.abs(lean) * 0.3);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const gl = ctx.createRadialGradient(x, y - h * 0.4, 0, x, y - h * 0.4, h * 2.6);
+  gl.addColorStop(0, `rgba(255,196,110,${0.34 * alpha})`); gl.addColorStop(1, 'rgba(255,196,110,0)');
+  ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(x, y - h * 0.4, h * 2.6, 0, 6.283); ctx.fill();
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha *= alpha;
+  const fg = ctx.createLinearGradient(x, y, tipx, tipy);
+  fg.addColorStop(0, '#FFF6DC'); fg.addColorStop(0.5, '#FFD27A'); fg.addColorStop(1, '#EE9536');
+  ctx.fillStyle = fg;
+  ctx.beginPath(); ctx.moveTo(x, y + h * 0.12);
+  ctx.bezierCurveTo(x - w, y, x - w * 0.55 + lean * h * 0.3, y - h * 0.55, tipx, tipy);
+  ctx.bezierCurveTo(x + w * 0.55 + lean * h * 0.3, y - h * 0.55, x + w, y, x, y + h * 0.12);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(130,160,255,.35)';
+  ctx.beginPath(); ctx.ellipse(x, y + h * 0.02, w * 0.33, h * 0.12, 0, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  update(dt, now); draw(now);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
